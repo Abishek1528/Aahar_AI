@@ -38,23 +38,46 @@ st.markdown(f'<style>{load_css()}</style>', unsafe_allow_html=True)
 
 st.markdown('<h2 class="auth-title">Login to Your Account</h2>', unsafe_allow_html=True)
 
+# Check session validity
+from utils import is_current_session_valid
+
+if not is_current_session_valid():
+    # Session expired or not authenticated
+    pass  # Continue to show login form
+
 with st.form(key='login_form'):
-    username_or_phone = st.text_input("Name or Phone Number", placeholder="Enter your name or phone number")
+    identifier = st.text_input("Email or Phone Number", placeholder="Enter your email or phone number")
     password = st.text_input("Password", type="password", placeholder="Enter your password")
-    login_submit = st.form_submit_button("Login")
+    login_submit = st.form_submit_button("Login", type='primary')
     
     if login_submit:
-        if username_or_phone.strip() == "" or password.strip() == "":
+        if identifier.strip() == "" or password.strip() == "":
             st.error("Please fill in all fields")
         else:
-            user = validate_login(username_or_phone, password)
-            if user:
-                st.session_state.authenticated = True
-                st.session_state.current_user = user
-                st.success("Login successful!")
+            success, message = login_user(identifier, password)
+            if success:
+                st.success(message)
                 st.switch_page("pages/4_Calculator.py")
             else:
-                st.error("Invalid credentials. Please try again.")
+                st.error(message)
+
+# Password recovery section
+st.markdown("---")
+st.markdown("<h4>Password Recovery</h4>", unsafe_allow_html=True)
+
+with st.expander("Forgot your password?"):
+    recovery_identifier = st.text_input("Enter your email or phone number for recovery")
+    if st.button("Send Recovery Link"):
+        if recovery_identifier.strip():
+            from utils import initiate_password_reset
+            success, result = initiate_password_reset(recovery_identifier)
+            if success:
+                st.success("Recovery instructions sent! Please check your email or messages.")
+                st.info("Note: In a real application, this would send an email/SMS with a recovery link.")
+            else:
+                st.error(result)
+        else:
+            st.error("Please enter your email or phone number")
 
 st.markdown("<br>", unsafe_allow_html=True)
 if st.button("Don't have an account? Sign Up", type='secondary', use_container_width=True):

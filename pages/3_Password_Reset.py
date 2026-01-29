@@ -1,14 +1,5 @@
 import streamlit as st
-import json
-import os
-from utils import signup_user
-
-# Initialize session state if not already done
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = None
-
+import re
 import os
 import sys
 
@@ -32,9 +23,21 @@ def load_css():
 
 st.markdown(f'<style>{load_css()}</style>', unsafe_allow_html=True)
 
-# Signup page 
+# Import utils
+from utils import reset_password, validate_password_strength
 
-st.markdown('<h2 class="auth-title">Create New Account</h2>', unsafe_allow_html=True)
+st.markdown('<h2 class="auth-title">Reset Your Password</h2>', unsafe_allow_html=True)
+
+# Get parameters from URL
+query_params = st.query_params
+token = query_params.get('token', [''])[0]
+identifier = query_params.get('id', [''])[0]
+
+if not token or not identifier:
+    st.error("Invalid reset link. Please use the link sent to your email or phone.")
+    if st.button("Back to Login"):
+        st.switch_page("pages/2_Login.py")
+    st.stop()
 
 # Password strength indicator
 def check_password_strength(password):
@@ -68,25 +71,15 @@ def check_password_strength(password):
     
     return strength, feedback
 
-with st.form(key='signup_form'):
-    name = st.text_input("Full Name", placeholder="Enter your full name", max_chars=50)
-    age = st.number_input("Age", min_value=13, max_value=120, value=18, step=1, 
-                         help="Must be between 13 and 120 years old")
+with st.form(key='reset_password_form'):
+    st.markdown(f"<p><strong>User:</strong> {identifier}</p>", unsafe_allow_html=True)
     
-    contact_col1, contact_col2 = st.columns([3,1])
-    with contact_col1:
-        contact = st.text_input("Phone Number", placeholder="Enter 10-digit phone number", max_chars=10)
-    with contact_col2:
-        st.markdown("<br>Format: 1234567890", unsafe_allow_html=True)
-    
-    email = st.text_input("Email Address", placeholder="Enter your email", max_chars=100)
-    
-    # Password with strength indicator
-    password = st.text_input("Password", type="password", placeholder="Create a strong password")
+    new_password = st.text_input("New Password", type="password", placeholder="Enter your new password")
+    confirm_password = st.text_input("Confirm Password", type="password", placeholder="Confirm your new password")
     
     # Show password strength in real-time
-    if password:
-        strength, feedback = check_password_strength(password)
+    if new_password:
+        strength, feedback = check_password_strength(new_password)
         strength_labels = ["Very Weak", "Weak", "Fair", "Good", "Strong"]
         strength_colors = ["#ff4444", "#ff8800", "#ffbb33", "#00C851", "#007E33"]
         
@@ -104,37 +97,32 @@ with st.form(key='signup_form'):
     • One number
     • One special character (!@#$%^&*(),.?:{}|<>)""")
     
-    signup_submit = st.form_submit_button("Create Account", type='primary')
+    reset_submit = st.form_submit_button("Reset Password", type='primary')
     
-    if signup_submit:
-        # Additional client-side validation
+    if reset_submit:
         errors = []
-        if not name.strip():
-            errors.append("Name is required")
-        if not contact.strip():
-            errors.append("Phone number is required")
-        if not email.strip():
-            errors.append("Email is required")
-        if not password.strip():
-            errors.append("Password is required")
+        
+        if not new_password:
+            errors.append("New password is required")
+        if not confirm_password:
+            errors.append("Please confirm your password")
+        if new_password != confirm_password:
+            errors.append("Passwords do not match")
         
         if errors:
             for error in errors:
                 st.error(error)
         else:
-            success, message = signup_user(name, age, contact, email, password)
+            # Reset password
+            success, message = reset_password(identifier, token, new_password)
             if success:
                 st.success(message)
-                st.info("Redirecting to login page...")
-                st.switch_page("pages/2_Login.py")
+                st.success("You can now login with your new password.")
+                if st.button("Go to Login"):
+                    st.switch_page("pages/2_Login.py")
             else:
-                # Split multiple errors and display them nicely
-                error_messages = message.split('; ') if '; ' in message else [message]
-                for error_msg in error_messages:
-                    st.error(error_msg)
+                st.error(message)
 
 st.markdown("<br>", unsafe_allow_html=True)
-if st.button("Already have an account? Login", type='secondary', use_container_width=True):
+if st.button("Back to Login", type='secondary', use_container_width=True):
     st.switch_page("pages/2_Login.py")
-
-st.markdown('</div>', unsafe_allow_html=True)

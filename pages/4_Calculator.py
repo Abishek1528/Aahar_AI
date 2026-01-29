@@ -26,6 +26,16 @@ def load_css():
 
 st.markdown(f'<style>{load_css()}</style>', unsafe_allow_html=True)
 
+# Session validation
+from utils import is_current_session_valid
+
+# Check if session is still valid
+if not is_current_session_valid():
+    st.warning("Your session has expired. Please login again.")
+    if st.button("Go to Login"):
+        st.switch_page("pages/2_Login.py")
+    st.stop()
+
 # Calculator page content
 st.markdown('<div class="calculator-container">', unsafe_allow_html=True)
 
