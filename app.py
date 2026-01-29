@@ -27,6 +27,14 @@ def initialize_users_file():
 # Initialize the users file
 initialize_users_file()
 
+# Session validation
+from utils import is_current_session_valid
+
+# Check session validity
+if st.session_state.authenticated and not is_current_session_valid():
+    st.session_state.authenticated = False
+    st.session_state.current_user = None
+
 # Auto-redirect based on authentication status
 if not st.session_state.authenticated:
     st.switch_page("pages/1_Landing.py")
