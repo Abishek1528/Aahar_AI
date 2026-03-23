@@ -39,6 +39,12 @@ if not is_current_session_valid():
 # Calculator page content
 st.markdown('<div class="calculator-container">', unsafe_allow_html=True)
 
+# Initialize session state for calculation results and meal plan
+if 'calc_result' not in st.session_state:
+    st.session_state.calc_result = None
+if 'meal_plan' not in st.session_state:
+    st.session_state.meal_plan = None
+
 # Title
 st.title("Aahar AI – Health Metrics Calculator")
 st.markdown("---")
@@ -78,30 +84,10 @@ if st.sidebar.button("Calculate Health Metrics", type='primary'):
             goal=goal_lower
         )
         
-        # Display results
-        st.subheader("Your Health Metrics")
-        col1, col2, col3 = st.columns(3)
+        # Store in session state to persist across reruns (for the nested AI button)
+        st.session_state.calc_result = result
+        st.session_state.meal_plan = None # Reset meal plan for new calculation
         
-        with col1:
-            st.metric(label="BMI (Body Mass Index)", value=result["bmi"])
-            # Interpret BMI
-            if result["bmi"] < 18.5:
-                st.caption("Underweight")
-            elif 18.5 <= result["bmi"] < 25:
-                st.caption("Normal weight")
-            elif 25 <= result["bmi"] < 30:
-                st.caption("Overweight")
-            else:
-                st.caption("Obese")
-                
-        with col2:
-            st.metric(label="BMR (Basal Metabolic Rate)", value=result["bmr"], delta=None)
-            st.caption(f"{result['bmr']} kcal/day")
-            
-        with col3:
-            st.metric(label="Recommended Daily Calories (TDEE)", value=result["daily_calories"], delta=None)
-        st.caption(f"{result['daily_calories']} kcal/day")
-
         # Save the results to a CSV file
         try:
             # Create a DataFrame for the new entry
@@ -131,8 +117,6 @@ if st.sidebar.button("Calculate Health Metrics", type='primary'):
             updated_history = pd.concat([history_df, new_entry], ignore_index=True)
             updated_history.to_csv(history_file, index=False)
 
-            st.success("Your health metrics have been saved to your history!")
-
         except Exception as e:
             st.error(f"An error occurred while saving your history: {str(e)}")
         
@@ -140,6 +124,59 @@ if st.sidebar.button("Calculate Health Metrics", type='primary'):
         st.error(f"Error in input: {str(e)}")
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
+
+# Display results if they exist in session state
+if st.session_state.calc_result:
+    result = st.session_state.calc_result
+    
+    st.subheader("Your Health Metrics")
+    st.success("Your health metrics have been saved to your history!")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(label="BMI (Body Mass Index)", value=result["bmi"])
+        # Interpret BMI
+        if result["bmi"] < 18.5:
+            st.caption("Underweight")
+        elif 18.5 <= result["bmi"] < 25:
+            st.caption("Normal weight")
+        elif 25 <= result["bmi"] < 30:
+            st.caption("Overweight")
+        else:
+            st.caption("Obese")
+            
+    with col2:
+        st.metric(label="BMR (Basal Metabolic Rate)", value=result["bmr"], delta=None)
+        st.caption(f"{result['bmr']} kcal/day")
+        
+    with col3:
+        st.metric(label="Recommended Daily Calories (TDEE)", value=result["daily_calories"], delta=None)
+        st.caption(f"{result['daily_calories']} kcal/day")
+
+    # --- AI Meal Plan Section ---
+    st.markdown("---")
+    st.subheader("Personalized AI Meal Plan")
+    
+    if st.button("Generate My Meal Plan", type='primary', use_container_width=True):
+        from ai_service import get_food_recommendation
+        
+        with st.spinner("Our AI nutritionist is crafting your personalized meal plan..."):
+            recommendation = get_food_recommendation(
+                daily_calories=result["daily_calories"],
+                goal=goal_lower,
+                weight=weight_kg,
+                height=height_cm,
+                age=age,
+                gender=gender_lower,
+                activity_level=activity_lower
+            )
+            st.session_state.meal_plan = recommendation
+            
+    # Display the meal plan if it was generated
+    if st.session_state.meal_plan:
+        st.markdown(st.session_state.meal_plan)
+    # ----------------------------
 
 else:
     # Default welcome message
