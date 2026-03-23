@@ -27,8 +27,15 @@ def initialize_users_file():
 # Initialize the users file
 initialize_users_file()
 
-# Session validation
 from utils import is_current_session_valid
+from utils import mongo_in_use, mongo_health, ensure_user_indexes
+
+if mongo_in_use():
+    ensure_user_indexes()
+    ok, msg = mongo_health()
+    if not ok:
+        st.error(f"MongoDB connection error: {msg}")
+        st.stop()
 
 # Check session validity
 if st.session_state.authenticated and not is_current_session_valid():

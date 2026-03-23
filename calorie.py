@@ -1,10 +1,11 @@
 # calorie_calc.py
 # Medically validated nutrition calculations for Aahar AI
+import numpy as np
 
 def calculate_bmi(weight_kg, height_cm):
     height_m = height_cm / 100
     bmi = weight_kg / (height_m ** 2)
-    return round(bmi, 2)
+    return np.round(bmi, 2)
 
 
 def calculate_bmr(weight_kg, height_cm, age, gender):
@@ -15,9 +16,11 @@ def calculate_bmr(weight_kg, height_cm, age, gender):
     elif gender == "female":
         bmr = (10 * weight_kg) + (6.25 * height_cm) - (5 * age) - 161
     else:
+        # For simplicity, we can return a default or raise an error.
+        # In a vectorized operation, it might be better to handle this gracefully.
         raise ValueError("Gender must be 'male' or 'female'")
 
-    return round(bmr, 2)
+    return np.round(bmr, 2)
 
 
 def get_activity_multiplier(activity_level):
@@ -42,18 +45,15 @@ def adjust_calories_for_goal(calories, goal):
     elif goal == "weight gain":
         calories += 500   # safe medical limit
     elif goal == "maintenance":
-        calories = calories
+        pass  # No change needed
     else:
         raise ValueError("Invalid goal. Choose weight loss, weight gain, or maintenance.")
 
-    return round(calories, 2)
-
+    return np.round(calories, 2)
 
 
 def calculate_health_metrics(weight_kg, height_cm, age, gender, activity_level, goal):
-    """
-    Returns BMI, BMR, and Daily Calorie Requirement
-    """
+    
     bmi = calculate_bmi(weight_kg, height_cm)
     bmr = calculate_bmr(weight_kg, height_cm, age, gender)
 
