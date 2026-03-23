@@ -100,7 +100,41 @@ if st.sidebar.button("Calculate Health Metrics", type='primary'):
             
         with col3:
             st.metric(label="Recommended Daily Calories (TDEE)", value=result["daily_calories"], delta=None)
-            st.caption(f"{result['daily_calories']} kcal/day")
+        st.caption(f"{result['daily_calories']} kcal/day")
+
+        # Save the results to a CSV file
+        try:
+            # Create a DataFrame for the new entry
+            new_entry = pd.DataFrame([{
+                'date': pd.to_datetime('today').date(),
+                'weight_kg': weight_kg,
+                'height_cm': height_cm,
+                'age': age,
+                'gender': gender,
+                'activity_level': activity_level,
+                'goal': goal,
+                'bmi': result["bmi"],
+                'bmr': result["bmr"],
+                'daily_calories': result["daily_calories"]
+            }])
+
+            # Define the history file path
+            history_file = 'history.csv'
+
+            # Read existing history or create an empty DataFrame
+            try:
+                history_df = pd.read_csv(history_file)
+            except FileNotFoundError:
+                history_df = pd.DataFrame()
+
+            # Append new entry and save
+            updated_history = pd.concat([history_df, new_entry], ignore_index=True)
+            updated_history.to_csv(history_file, index=False)
+
+            st.success("Your health metrics have been saved to your history!")
+
+        except Exception as e:
+            st.error(f"An error occurred while saving your history: {str(e)}")
         
     except ValueError as e:
         st.error(f"Error in input: {str(e)}")

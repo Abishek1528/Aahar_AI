@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import os
+import re
 from utils import signup_user
 
 # Initialize session state if not already done
@@ -89,9 +90,10 @@ with st.form(key='signup_form'):
         strength, feedback = check_password_strength(password)
         strength_labels = ["Very Weak", "Weak", "Fair", "Good", "Strong"]
         strength_colors = ["#ff4444", "#ff8800", "#ffbb33", "#00C851", "#007E33"]
+        strength_index = 4 if strength > 4 else strength
         
-        st.progress(strength/5)
-        st.markdown(f"<p style='color:{strength_colors[strength]};font-weight:bold'>Password Strength: {strength_labels[strength]}</p>", 
+        st.progress(int(strength * 20))
+        st.markdown(f"<p style='color:{strength_colors[strength_index]};font-weight:bold'>Password Strength: {strength_labels[strength_index]}</p>", 
                    unsafe_allow_html=True)
         
         if feedback:

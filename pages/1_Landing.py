@@ -14,12 +14,12 @@ def load_css():
         with open(styles_path, 'r', encoding='utf-8') as f:
             return f.read()
     except FileNotFoundError:
-        # Fallback: try relative to script path
+        
         try:
             with open('styles.css', 'r', encoding='utf-8') as f:
                 return f.read()
         except FileNotFoundError:
-            # Return empty string if no CSS file found
+           
             return ""
 
 st.markdown(f'<style>{load_css()}</style>', unsafe_allow_html=True)
